@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wake-on-LAN Proxy</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', path='/css/styles.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Wake-on-LAN Proxy</h1>
+
+      {% if message %}
+      <div
+        class="alert {% if status == 'success' %}alert-success{% else %}alert-error{% endif %}"
+      >
+        {{ message }}
+      </div>
+      {% endif %}
+
+      <div class="card">
+        <form action="/wake" method="post">
+          <div class="form-group">
+            <label for="mac_address">MAC Address:</label>
+            <input
+              type="text"
+              id="mac_address"
+              name="mac_address"
+              placeholder="00:11:22:33:44:55"
+              required
+            />
+            <p class="help-text">Format: XX:XX:XX:XX:XX:XX</p>
+          </div>
+          <button type="submit" class="btn">Wake Computer</button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
