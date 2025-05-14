@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import httpx
 import asyncio
 import os
+import logging
 
 # Load environment variables from .env file
 load_dotenv()
@@ -16,21 +17,51 @@ load_dotenv()
 TARGET_MAC = os.getenv("TARGET_MAC")
 TARGET_IP = os.getenv("TARGET_IP")
 TARGET_PORT = int(os.getenv("TARGET_PORT"))
-
 WAIT_TIMEOUT = 60  # secondes
 
-async def wait_for_port(ip, port, timeout):
-    """Wait IP address and port to be available."""
-    for _ in range(timeout):
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+async def wait_for_port(ip: str, port: int, timeout: int) -> bool:
+    """
+    Wait for a TCP port to become available.
+    
+    Args:
+        ip: Target IP address
+        port: Target port number
+        timeout: Maximum seconds to wait
+    
+    Returns:
+        bool: True if port becomes available, False if timeout reached
+    """
+    start_time = asyncio.get_event_loop().time()
+    last_error = None
+
+    while (asyncio.get_event_loop().time() - start_time) < timeout:
         try:
+            # Attempt connection with a short timeout
             reader, writer = await asyncio.wait_for(
-                asyncio.open_connection(ip, port), timeout=1
+                asyncio.open_connection(ip, port),
+                timeout=1.0
             )
+            
+            # Clean up the connection
             writer.close()
             await writer.wait_closed()
+            
+            logging.info(f"Successfully connected to {ip}:{port}")
             return True
-        except:
-            await asyncio.sleep(1)
+            
+        except Exception as e:
+            logging.error(f"Unexpected error checking {ip}:{port}: {str(e)}")
+            return False
+            
+        # Wait before next attempt
+        await asyncio.sleep(1)
+
+    logging.warning(f"Timeout reached waiting for {ip}:{port}. Last error: {last_error}")
     return False
 
 app = FastAPI(title="Wake-on-LAN Proxy")
