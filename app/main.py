@@ -20,13 +20,13 @@ TARGET_IP = os.getenv("TARGET_IP")
 TARGET_PORT = int(os.getenv("TARGET_PORT"))
 
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
 
 async def wait_host_port(host, port, duration=60, delay=1):
     """Repeatedly try if a port on a host is open until duration seconds passed
-    
+
     Parameters
     ----------
     host : str
@@ -37,7 +37,7 @@ async def wait_host_port(host, port, duration=60, delay=1):
         Total duration in seconds to wait, by default 60
     delay : int, optional
         delay in seconds between each try, by default 1
-    
+
     Returns
     -------
     awaitable bool
@@ -55,21 +55,22 @@ async def wait_host_port(host, port, duration=60, delay=1):
                 await asyncio.sleep(delay)
     return False
 
+
 app = FastAPI(title="Wake-on-LAN Proxy")
 
 # Mount static files directory
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/wol/static", StaticFiles(directory="app/static"), name="static")
 
 # Setup templates
 templates = Jinja2Templates(directory="app/templates")
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/wol", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-@app.post("/wake", response_class=HTMLResponse)
+@app.post("/wol/wake", response_class=HTMLResponse)
 async def wake_on_lan(request: Request, mac_address: str = Form(...)):
     try:
         # Send the magic packet to wake the computer
@@ -83,6 +84,7 @@ async def wake_on_lan(request: Request, mac_address: str = Form(...)):
     return templates.TemplateResponse(
         "index.html", {"request": request, "message": message, "status": status}
     )
+
 
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy(request: Request, path: str):
@@ -101,15 +103,14 @@ async def proxy(request: Request, path: str):
         headers = dict(request.headers)
         body = await request.body()
 
-        forwarded = await client.request(
-            method, url, content=body, headers=headers
-        )
+        forwarded = await client.request(method, url, content=body, headers=headers)
 
     return Response(
         content=forwarded.content,
         status_code=forwarded.status_code,
-        headers=dict(forwarded.headers)
+        headers=dict(forwarded.headers),
     )
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
