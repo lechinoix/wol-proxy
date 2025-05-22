@@ -45,13 +45,20 @@ async def wait_host_port(host, port, duration=60, delay=1):
     tmax = time.time() + duration
     while time.time() < tmax:
         try:
-            _reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=5)
+            print("Try connecting")
+            _reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(host, port), timeout=5
+            )
+            print("Closing connection")
             writer.close()
             await writer.wait_closed()
+            print("Success connecting")
             return True
         except Exception as e:
+            print("Failed connecting")
             logging.error(f"Error while waiting for port: {str(e)}")
             if delay:
+                print("Await delay")
                 await asyncio.sleep(delay)
     return False
 
